@@ -64,11 +64,37 @@ export const usePollStore = defineStore('poll', () => {
     if (!poll.value) throw new Error('poll not loaded')
     const voter_token = getOrCreateVoterToken(poll.value.id)
     const payload = { poll_id: poll.value.id, voter_token, choice }
-    const { data, error } = await supabase
-      .from('votes')
-      .upsert(payload, { onConflict: ['poll_id', 'voter_token'] })
+    // Try upsert using a conflict target that matches the DB index.
+    // Some supabase/postgres setups expect a comma-separated string for onConflict.
+    let data = null
+    let error = null
+    try {
+      const res = await supabase
+        .from('votes')
+        // pass as array to be safe and use comma-separated onConflict
+        .upsert([payload], { onConflict: 'poll_id, voter_token' })
+      data = res.data
+      error = res.error
+    } catch (err) {
+      // unexpected client-side error
+      error = err
+    }
 
-    // refresh votes after upsert
+    // If upsert failed due to missing unique constraint, try a safe fallback: insert
+    if (error) {
+      const msg = (error && error.message) ? error.message : String(error)
+      if (msg.includes('no unique or exclusion constraint') || msg.includes('ON CONFLICT')) {
+        try {
+          const ins = await supabase.from('votes').insert([payload])
+          data = ins.data
+          error = ins.error
+        } catch (e) {
+          error = e
+        }
+      }
+    }
+
+    // refresh votes after upsert/insert
     await fetchVotes()
     return { data, error }
   }
