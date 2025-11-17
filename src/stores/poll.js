@@ -80,14 +80,36 @@ export const usePollStore = defineStore('poll', () => {
       error = err
     }
 
-    // If upsert failed due to missing unique constraint, try a safe fallback: insert
+    // If upsert failed (e.g. client/server mismatch), do a safe existence-check then update/insert.
     if (error) {
       const msg = (error && error.message) ? error.message : String(error)
-      if (msg.includes('no unique or exclusion constraint') || msg.includes('ON CONFLICT')) {
+      if (msg.includes('no unique or exclusion constraint') || msg.includes('ON CONFLICT') || msg.includes('duplicate key')) {
         try {
-          const ins = await supabase.from('votes').insert([payload])
-          data = ins.data
-          error = ins.error
+          // check if a vote already exists for this poll_id + voter_token
+          const { data: existing, error: selErr } = await supabase
+            .from('votes')
+            .select('id, choice')
+            .eq('poll_id', poll.value.id)
+            .eq('voter_token', voter_token)
+            .limit(1)
+
+          if (selErr) {
+            error = selErr
+          } else if (existing && existing.length > 0) {
+            // update the existing row (safe fallback)
+            const id = existing[0].id
+            const upd = await supabase
+              .from('votes')
+              .update({ choice, updated_at: new Date().toISOString() })
+              .eq('id', id)
+            data = upd.data
+            error = upd.error
+          } else {
+            // no existing row -> insert
+            const ins = await supabase.from('votes').insert([payload])
+            data = ins.data
+            error = ins.error
+          }
         } catch (e) {
           error = e
         }

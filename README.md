@@ -1,6 +1,6 @@
 # チャレンジキャラバン　チームミルフィーユ
 
-##　メンバー
+## メンバー
 - [いぶき](https://github.com/ibuki3268)
 - [かわ](https://github.com/tRensn)
 
