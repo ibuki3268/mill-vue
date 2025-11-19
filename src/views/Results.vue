@@ -7,10 +7,11 @@ const route = useRoute()
 const store = usePollStore()
 const loading = ref(true)
 const publicToken = route.params.public_token
+const roomToken = route.params.room_token || null
 
 onMounted(async () => {
   try {
-    await store.fetchPollByPublicToken(publicToken)
+    await store.fetchPollByPublicToken(publicToken, roomToken)
     await store.fetchVotes()
   } catch (e) {
     // ignore
@@ -44,7 +45,7 @@ const total = computed(() => Object.values(counts.value).reduce((a, b) => a + b,
       </ul>
       <p>Total votes: {{ total }}</p>
       <div style="margin-top:12px">
-        <router-link :to="{ name: 'poll', params: { public_token: publicToken } }">投票に戻る</router-link>
+        <router-link :to="roomToken ? { name: 'room-poll', params: { room_token: roomToken, public_token: publicToken } } : { name: 'poll', params: { public_token: publicToken } }">投票に戻る</router-link>
       </div>
     </div>
     <div v-else>Poll not found</div>
