@@ -11,6 +11,7 @@ const loading = ref(true)
 const error = ref(null)
 
 const publicToken = route.params.public_token
+const roomToken = route.params.room_token || null
 
 const voterToken = ref(null)
 const submitting = ref(false)
@@ -20,7 +21,7 @@ let undoTimeout = null
 
 onMounted(async () => {
   try {
-    await store.fetchPollByPublicToken(publicToken)
+    await store.fetchPollByPublicToken(publicToken, roomToken)
     await store.fetchVotes()
     // ensure we have a voter token for this poll
     voterToken.value = store.getVoterToken()
@@ -63,7 +64,9 @@ async function onVote(choice) {
 
     // navigate to results after a short delay to let user see undo
     setTimeout(() => {
-      router.push({ name: 'results', params: { public_token: publicToken } })
+      const routeName = roomToken ? 'room-results' : 'results'
+      const params = roomToken ? { room_token: roomToken, public_token: publicToken } : { public_token: publicToken }
+      router.push({ name: routeName, params })
     }, 900)
   } catch (e) {
     alert('Vote failed: ' + (e.message || e))
@@ -84,6 +87,20 @@ async function undo() {
     alert('Undo failed: ' + (e.message || e))
   } finally {
     submitting.value = false
+  }
+}
+
+function shareLink() {
+  const routeName = roomToken ? 'room-poll' : 'poll'
+  const params = roomToken ? { room_token: roomToken, public_token: publicToken } : { public_token: publicToken }
+  const base = location.origin
+  const url = roomToken ? `${base}/r/${roomToken}/p/${publicToken}` : `${base}/p/${publicToken}`
+  try {
+    navigator.clipboard.writeText(url)
+    alert('共有リンクをコピーしました: ' + url)
+  } catch (e) {
+    // fallback: show the url
+    prompt('以下のURLをコピーしてください', url)
   }
 }
 </script>
@@ -110,9 +127,10 @@ async function undo() {
         投票を変更しました。
         <button @click="undo" :disabled="submitting" style="margin-left:8px">元に戻す</button>
       </div>
-      <div style="margin-top:12px">
-        <router-link :to="{ name: 'results', params: { public_token: publicToken } }">結果を見る</router-link>
-      </div>
+        <div style="margin-top:12px">
+          <router-link :to="roomToken ? { name: 'room-results', params: { room_token: roomToken, public_token: publicToken } } : { name: 'results', params: { public_token: publicToken } }">結果を見る</router-link>
+          <button @click="shareLink" style="margin-left:8px;padding:6px 8px;border-radius:4px;border:1px solid #ddd;background:#fff">共有</button>
+        </div>
     </div>
     <div v-else>Poll not found</div>
   </div>

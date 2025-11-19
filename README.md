@@ -66,3 +66,36 @@ npm run dev
 
 ローカルホストリンク `http://localhost:5173` 
 サンプル poll の public_token を取得している場合は `http://localhost:5173/p/{public_token}` に直接可能
+
+## ルーム対応（複数グループで分ける）
+
+このアプリではルーム（room_token）ごとに投票を分離できます。フロント側ではルートとして
+
+- `/r/:room_token/p/:public_token`（投票ページ）
+- `/r/:room_token/p/:public_token/results`（結果ページ）
+
+としてアクセスします。既存の `/p/:public_token` ルートは後方互換として残します。
+
+バックエンド（Supabase）側でルームを使うには `polls` と `votes` に `room_token` カラムを追加すると簡単です。SQL例:
+
+```sql
+-- polls に room_token を追加（既存データは NULL のまま）
+alter table polls add column if not exists room_token text;
+
+-- votes に room_token を追加（オプションだがあるとデバッグしやすい）
+alter table votes add column if not exists room_token text;
+
+-- 新規に room スコープの poll を挿入する例
+insert into polls (title, choices, public_token, room_token)
+values (
+  '部屋A用の投票',
+  '["はい","いいえ"]'::jsonb,
+  encode(gen_random_bytes(8), 'hex'),
+  'room-A-123'
+)
+returning id, public_token, room_token;
+```
+
+※マイグレーション後、`public_token` と `room_token` の組み合わせで意図した poll が返るようになります。
+
+フロント実装は既にルームパラメータを受け取るようにしてあります。ルームスコープで投票するには、ルーム付きURLでアクセスしてください。

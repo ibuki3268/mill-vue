@@ -32,13 +32,13 @@ export const usePollStore = defineStore('poll', () => {
   const poll = ref(null)
   const votes = ref([])
 
-  async function fetchPollByPublicToken(publicToken) {
-    const { data, error } = await supabase
-      .from('polls')
-      .select('*')
-      .eq('public_token', publicToken)
-      .single()
+  // If roomToken is provided, filter polls by it as well.
+  async function fetchPollByPublicToken(publicToken, roomToken = null) {
+    let q = supabase.from('polls').select('*')
+    q = q.eq('public_token', publicToken)
+    if (roomToken) q = q.eq('room_token', roomToken)
 
+    const { data, error } = await q.single()
     if (error) throw error
     poll.value = data
     return data
@@ -63,7 +63,9 @@ export const usePollStore = defineStore('poll', () => {
   async function vote(choice) {
     if (!poll.value) throw new Error('poll not loaded')
     const voter_token = getOrCreateVoterToken(poll.value.id)
-    const payload = { poll_id: poll.value.id, voter_token, choice }
+  const payload = { poll_id: poll.value.id, voter_token, choice }
+  // include room_token if this poll is room-scoped
+  if (poll.value && poll.value.room_token) payload.room_token = poll.value.room_token
     // Try upsert using a conflict target that matches the DB index.
     // Some supabase/postgres setups expect a comma-separated string for onConflict.
     let data = null
