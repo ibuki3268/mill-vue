@@ -69,20 +69,21 @@ npm run dev
 
 ## ルーム対応（複数グループで分ける）
 
-このアプリではルーム（room_token）ごとに投票を分離できます。フロント側ではルートとして
+このアプリではルーム（room_token）ごとに投票を分離可能
+フロント側ではルートとして
 
 - `/r/:room_token/p/:public_token`（投票ページ）
 - `/r/:room_token/p/:public_token/results`（結果ページ）
 
-としてアクセスします。既存の `/p/:public_token` ルートは後方互換として残します。
+としてアクセス
 
-バックエンド（Supabase）側でルームを使うには `polls` と `votes` に `room_token` カラムを追加すると簡単です。SQL例:
+
+Supabase側でルームを使うには `polls` と `votes` に `room_token` カラムを追加する
+SQL例:
 
 ```sql
--- polls に room_token を追加（既存データは NULL のまま）
+-- polls に room_token を追加
 alter table polls add column if not exists room_token text;
-
--- votes に room_token を追加（オプションだがあるとデバッグしやすい）
 alter table votes add column if not exists room_token text;
 
 -- 新規に room スコープの poll を挿入する例
@@ -97,7 +98,7 @@ returning id, public_token, room_token;
 ```
 
 -- ルーム管理用テーブル（作成者だけが自分のルーム一覧を見られる仕組み）
--- このテーブルを作り、クライアント側で生成した `creator_token` を owner_token として保存します。
+-- このテーブルを作り、クライアント側で生成した `creator_token` を owner_token として保存
 create table if not exists rooms (
   id uuid primary key default gen_random_uuid(),
   room_token text unique not null,
@@ -109,8 +110,6 @@ create table if not exists rooms (
 create index if not exists idx_rooms_owner on rooms(owner_token);
 
 -- Home ページで Poll を作成するとき、クライアントは自分のローカルに `creator_token` を保持し、
--- rooms.owner_token にその値を保存します。これにより「作成者のみが自分のルーム一覧を閲覧」できます。
+-- rooms.owner_token にその値を保存
+作成者のみが自分のルーム一覧を閲覧可能
 
-※マイグレーション後、`public_token` と `room_token` の組み合わせで意図した poll が返るようになります。
-
-フロント実装は既にルームパラメータを受け取るようにしてあります。ルームスコープで投票するには、ルーム付きURLでアクセスしてください。
