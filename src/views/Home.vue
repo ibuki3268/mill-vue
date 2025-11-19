@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
@@ -8,6 +8,7 @@ const roomToken = ref('')
 const publicToken = ref('')
 const busy = ref(false)
 const message = ref('')
+const creatorToken = ref('')
 
 function genHex(bytes = 8) {
   try {
@@ -19,9 +20,44 @@ function genHex(bytes = 8) {
   }
 }
 
-function createRandomRoom() {
+async function createRandomRoom() {
   roomToken.value = 'room-' + genHex(4)
+  try {
+    await ensureRoomRecord(roomToken.value)
+  } catch (e) {
+    // ignore
+  }
 }
+
+function getOrCreateCreatorToken() {
+  try {
+    const key = 'creator_token'
+    let t = localStorage.getItem(key)
+    if (t) return t
+    t = genHex(12)
+    localStorage.setItem(key, t)
+    return t
+  } catch (e) {
+    return genHex(12)
+  }
+}
+
+async function ensureRoomRecord(room) {
+  if (!room) return
+  const owner = creatorToken.value || getOrCreateCreatorToken()
+  try {
+    const { error } = await supabase.from('rooms').insert([{ room_token: room, owner_token: owner }])
+    if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+      console.warn('ensureRoomRecord error', error)
+    }
+  } catch (e) {
+    console.warn('ensureRoomRecord exception', e)
+  }
+}
+
+onMounted(() => {
+  creatorToken.value = getOrCreateCreatorToken()
+})
 
 async function goToRoom() {
   if (!roomToken.value) {
@@ -50,6 +86,8 @@ async function createPollAndEnter() {
   busy.value = true
   message.value = 'Creating poll...'
   try {
+    // make sure room exists so creator can list it later
+    if (roomToken.value) await ensureRoomRecord(roomToken.value)
     const ptoken = genHex(8)
     const payload = {
       title,

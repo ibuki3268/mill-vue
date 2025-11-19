@@ -19,9 +19,11 @@ function goToRoom() {
       <router-link to="/">Home</router-link>
       |
       <!-- example poll token inserted here for convenience -->
-      <router-link :to="{ name: 'poll', params: { public_token: '3f33d002b304e669' } }">サンプル投票</router-link>
+    <router-link :to="{ name: 'poll', params: { public_token: '3f33d002b304e669' } }">サンプル投票</router-link>
       |
   <router-link :to="{ name: 'results', params: { public_token: '3f33d002b304e669' } }">サンプル結果</router-link>
+  |
+  <router-link :to="{ name: 'my-rooms' }" style="margin-left:8px">作成したルーム</router-link>
   |
   <button @click="goToRoom" style="background:#3b82f6;color:#fff;border:none;padding:6px 10px;border-radius:4px;margin-left:8px;cursor:pointer">ルームに飛ぶ</button>
     </nav>

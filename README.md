@@ -96,6 +96,21 @@ values (
 returning id, public_token, room_token;
 ```
 
+-- ルーム管理用テーブル（作成者だけが自分のルーム一覧を見られる仕組み）
+-- このテーブルを作り、クライアント側で生成した `creator_token` を owner_token として保存します。
+create table if not exists rooms (
+  id uuid primary key default gen_random_uuid(),
+  room_token text unique not null,
+  owner_token text not null,
+  name text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_rooms_owner on rooms(owner_token);
+
+-- Home ページで Poll を作成するとき、クライアントは自分のローカルに `creator_token` を保持し、
+-- rooms.owner_token にその値を保存します。これにより「作成者のみが自分のルーム一覧を閲覧」できます。
+
 ※マイグレーション後、`public_token` と `room_token` の組み合わせで意図した poll が返るようになります。
 
 フロント実装は既にルームパラメータを受け取るようにしてあります。ルームスコープで投票するには、ルーム付きURLでアクセスしてください。
