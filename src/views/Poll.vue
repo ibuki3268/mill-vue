@@ -23,7 +23,6 @@ onMounted(async () => {
   try {
     await store.fetchPollByPublicToken(publicToken, roomToken)
     await store.fetchVotes()
-    // ensure we have a voter token for this poll
     voterToken.value = store.getVoterToken()
   } catch (e) {
     error.value = e.message || String(e)
@@ -39,11 +38,7 @@ const currentVote = computed(() => {
 
 async function onVote(choice) {
   if (submitting.value) return
-
-  // If user already voted same choice, nothing to do
-  if (currentVote.value && currentVote.value.choice === choice) {
-    return
-  }
+  if (currentVote.value && currentVote.value.choice === choice) return
 
   const ok = window.confirm('投票を確定しますか？（既に投票済みの場合は上書きされます）')
   if (!ok) return
@@ -51,26 +46,18 @@ async function onVote(choice) {
   submitting.value = true
   try {
     previousChoice.value = currentVote.value ? currentVote.value.choice : null
-    const { data, error } = await store.vote(choice)
+    const { error } = await store.vote(choice)
     if (error) throw error
 
-    // Show undo option briefly
     showUndo.value = true
     if (undoTimeout) clearTimeout(undoTimeout)
     undoTimeout = setTimeout(() => { showUndo.value = false; undoTimeout = null }, 8000)
 
-    // update local voter token (store.vote may have created it)
     voterToken.value = store.getVoterToken()
 
-    // navigate to results after a short delay to let user see undo
-    setTimeout(() => {
-      const routeName = roomToken ? 'room-results' : 'results'
-      const params = roomToken ? { room_token: roomToken, public_token: publicToken } : { public_token: publicToken }
-      router.push({ name: routeName, params })
-    }, 900)
   } catch (e) {
     alert('Vote failed: ' + (e.message || e))
-   } finally {
+  } finally {
     submitting.value = false
   }
 }
@@ -79,7 +66,7 @@ async function undo() {
   if (!previousChoice.value) return
   submitting.value = true
   try {
-    const { data, error } = await store.vote(previousChoice.value)
+    const { error } = await store.vote(previousChoice.value)
     if (error) throw error
     showUndo.value = false
     if (undoTimeout) { clearTimeout(undoTimeout); undoTimeout = null }
@@ -91,22 +78,19 @@ async function undo() {
 }
 
 function shareLink() {
-  const routeName = roomToken ? 'room-poll' : 'poll'
-  const params = roomToken ? { room_token: roomToken, public_token: publicToken } : { public_token: publicToken }
   const base = location.origin
   const url = roomToken ? `${base}/r/${roomToken}/p/${publicToken}` : `${base}/p/${publicToken}`
   try {
     navigator.clipboard.writeText(url)
     alert('共有リンクをコピーしました: ' + url)
   } catch (e) {
-    // fallback: show the url
     prompt('以下のURLをコピーしてください', url)
   }
 }
 </script>
 
 <template>
-  <div style="padding:16px">
+  <div class="poll-card">
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">Error: {{ error }}</div>
     <div v-else-if="store.poll">
@@ -116,22 +100,95 @@ function shareLink() {
       </div>
       <div v-for="(c, i) in store.poll.choices" :key="i" style="margin:8px 0">
         <button
+          class="vote-btn"
           @click="onVote(c)"
           :disabled="submitting"
-          :style="{ padding: '8px 12px', background: (currentVote && currentVote.choice === c) ? '#e6f7ff' : '#fff' }"
+          :class="{ active: currentVote && currentVote.choice === c }"
         >
           {{ c }}
         </button>
       </div>
-      <div v-if="showUndo" style="margin-top:8px; background:#fff7e6; padding:8px; border:1px solid #ffe4b5">
-        投票を変更しました。
-        <button @click="undo" :disabled="submitting" style="margin-left:8px">元に戻す</button>
-      </div>
-        <div style="margin-top:12px">
-          <router-link :to="roomToken ? { name: 'room-results', params: { room_token: roomToken, public_token: publicToken } } : { name: 'results', params: { public_token: publicToken } }">結果を見る</router-link>
-          <button @click="shareLink" style="margin-left:8px;padding:6px 8px;border-radius:4px;border:1px solid #ddd;background:#fff">共有</button>
+
+      <!-- Undo通知をトースト風に -->
+      <transition name="fade">
+        <div v-if="showUndo" class="toast">
+          投票を変更しました。
+          <button @click="undo" :disabled="submitting" class="undo-btn">元に戻す</button>
         </div>
+      </transition>
+
+      <div style="margin-top:12px">
+        <router-link :to="roomToken ? { name: 'room-results', params: { room_token: roomToken, public_token: publicToken } } : { name: 'results', params: { public_token: publicToken } }">結果を見る</router-link>
+        <button @click="shareLink" class="share-btn">共有</button>
+      </div>
     </div>
     <div v-else>Poll not found</div>
   </div>
 </template>
+
+<style scoped>
+.poll-card {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 28px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.poll-card h2 {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+/* 投票ボタン */
+.vote-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #f9fafb;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.vote-btn:hover {
+  background: #eaeaea;
+}
+.vote-btn.active {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* ガラス風トースト通知 */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 14px 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-weight: 500;
+}
+.undo-btn {
+  margin-left: 12px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: #fff;
+  cursor: pointer;
+}
+.undo-btn:hover {
+  background: #2563eb;
+}
+</style>

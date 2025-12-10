@@ -15,30 +15,64 @@ function goToRoom() {
 
 <template>
   <div>
-    <nav style="padding:12px; border-bottom:1px solid #eee">
-      <router-link to="/">Home</router-link>
-      |
-      <!-- example poll token inserted here for convenience -->
-    <router-link :to="{ name: 'poll', params: { public_token: '3f33d002b304e669' } }">サンプル投票</router-link>
-      |
-  <router-link :to="{ name: 'results', params: { public_token: '3f33d002b304e669' } }">サンプル結果</router-link>
-  |
-  <router-link :to="{ name: 'my-rooms' }" style="margin-left:8px">作成したルーム</router-link>
-  |
-  <button @click="goToRoom" style="background:#3b82f6;color:#fff;border:none;padding:6px 10px;border-radius:4px;margin-left:8px;cursor:pointer">ルームに飛ぶ</button>
+    <nav class="navbar">
+      <router-link to="/" class="nav-btn"> Home</router-link>
+      <router-link :to="{ name: 'poll', params: { public_token: '3f33d002b304e669' } }" class="nav-btn"> サンプル投票</router-link>
+      <router-link :to="{ name: 'results', params: { public_token: '3f33d002b304e669' } }" class="nav-btn"> サンプル結果</router-link>
+      <router-link :to="{ name: 'my-rooms' }" class="nav-btn"> 作成したルーム</router-link>
+      <button @click="goToRoom" class="nav-btn primary"> ルームに飛ぶ</button>
     </nav>
 
-    <main style="padding:16px">
+    <main class="main">
       <router-view />
     </main>
 
-    <footer style="padding:12px; border-top:1px solid #eee; font-size:12px; color:#666">
+    <footer class="footer">
       mill-vue — 公開リンク + cookie 方式の投票デモ
     </footer>
   </div>
 </template>
 
 <style scoped>
-a { color: #3b82f6; text-decoration: none }
-a:hover { text-decoration: underline }
+.navbar {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.nav-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #374151;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+.nav-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+}
+.nav-btn.primary {
+  background: #3b82f6;
+  color: #fff;
+}
+.nav-btn.primary:hover {
+  background: #2563eb;
+}
+.footer {
+  padding: 12px;
+  border-top: 1px solid #eee;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+
+/* ★ 追加: 現在開いているページのリンクを色付きにする */
+.router-link-exact-active {
+  background: #49abf1ff;
+  color: #fff !important;
+  border-radius: 6px;
+}
 </style>
