@@ -7,6 +7,7 @@
 
 ## 環境
 - Node.js
+- vite
 - Supabase
 
 ## 環境変数
