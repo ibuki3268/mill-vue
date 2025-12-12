@@ -47,11 +47,11 @@ async function ensureRoomRecord(room) {
       .from('rooms')
       .insert([{ room_token: room, owner_token: owner }])
     if (supaError && !String(supaError.message).toLowerCase().includes('duplicate')) {
-      error.value = 'ルーム作成に失敗しました: ' + supaError.message
+      error.value = 'グループの作成に失敗しました: ' + supaError.message
       console.warn('ensureRoomRecord error', supaError)
     }
   } catch (e) {
-    error.value = 'ルーム作成時に例外が発生しました: ' + e.message
+    error.value = 'グループ作成時に例外が発生しました: ' + e.message
     console.warn('ensureRoomRecord exception', e)
   }
 }
@@ -63,12 +63,12 @@ onMounted(() => {
 
 async function goToRoom() {
   if (!roomToken.value) {
-    alert('ルームトークンを入力するか「ランダムルームを生成」を押してください')
+    alert('グループIDを入力するか「新しいグループを作成」を押してください')
     return
   }
   if (!publicToken.value) {
     // ask whether to create a new poll in this room
-    const create = confirm('public_token が空です。新しい Poll をこのルームで作成しますか？')
+    const create = confirm('投票IDが空です。このグループで新しい投票を作成しますか？')
     if (!create) return
     await createPollAndEnter()
     return
@@ -77,7 +77,7 @@ async function goToRoom() {
 }
 
 async function createPollAndEnter() {
-  const title = window.prompt('Poll のタイトルを入力してください')
+  const title = window.prompt('投票のタイトルを入力してください')
   if (!title) return
   const raw = window.prompt('選択肢をカンマ区切りで入力してください（例: はい,いいえ）')
   if (!raw) return
@@ -85,7 +85,7 @@ async function createPollAndEnter() {
   if (choices.length === 0) return
 
   busy.value = true
-  message.value = 'Creating poll...'
+  message.value = '投票を作成中...'
   error.value = null
   try {
     if (roomToken.value) await ensureRoomRecord(roomToken.value)
@@ -95,11 +95,11 @@ async function createPollAndEnter() {
     if (supaError) throw supaError
     const got = data && data[0] && data[0].public_token ? data[0].public_token : ptoken
     const link = `${location.origin}/r/${roomToken.value}/p/${got}`
-    message.value = '作成しました: ' + got + '\n共有リンクをクリップボードにコピーしました。\n' + link
+    message.value = '投票を作成しました！\n共有リンクをクリップボードにコピーしました。\n' + link
     await navigator.clipboard.writeText(link).catch(() => {})
     router.push({ name: 'room-poll', params: { room_token: roomToken.value, public_token: got } })
   } catch (e) {
-    error.value = 'Poll 作成に失敗しました: ' + (e.message || String(e))
+    error.value = '投票の作成に失敗しました: ' + (e.message || String(e))
   } finally {
     busy.value = false
   }
@@ -108,7 +108,7 @@ async function createPollAndEnter() {
 
 function goToPublic() {
   if (!publicToken.value) {
-    alert('public_token を入力してください')
+    alert('投票IDを入力してください')
     return
   }
   router.push({ name: 'poll', params: { public_token: publicToken.value } })
@@ -117,7 +117,7 @@ function goToPublic() {
 async function copyLink() {
   const token = roomToken.value && publicToken.value ? `${location.origin}/r/${roomToken.value}/p/${publicToken.value}` : ''
   if (!token) {
-    alert('room と public token の両方が必要です')
+    alert('グループIDと投票IDの両方が必要です')
     return
   }
   try {
@@ -131,30 +131,30 @@ async function copyLink() {
 
 <template>
   <div class="container">
-    <h1 class="title">ようこそ — ルームで投票</h1>
-    <p class="subtitle">ルームを作成または指定して Poll を作成・参加できます。</p>
+    <h1 class="title">Airscene へようこそ</h1>
+    <p class="subtitle">グループを作成して投票を始めましょう</p>
 
-    <!-- ルームトークン入力 -->
+    <!-- グループID入力 -->
     <div class="card">
-      <label for="roomToken">ルームトークン</label>
-      <small class="description">既存のルームを指定するか、新しくランダム生成できます。</small>
+      <label for="roomToken">グループID</label>
+      <small class="description">既存のグループを指定するか、新しく作成できます。</small>
       <div class="row">
         <input id="roomToken" v-model="roomToken" placeholder="例: room-A-123" />
-        <button class="btn primary" @click="createRandomRoom">ランダムルームを生成</button>
+        <button class="btn primary" @click="createRandomRoom">新しいグループを作成</button>
       </div>
     </div>
 
-    <!-- Poll public_token 入力 -->
+    <!-- 投票ID入力 -->
     <div class="card">
-      <label for="publicToken">Poll の public_token</label>
-      <small class="description">既存の Poll がある場合はここに入力してください。</small>
+      <label for="publicToken">投票ID（任意）</label>
+      <small class="description">既存の投票がある場合はここに入力してください。</small>
       <div class="row">
         <input id="publicToken" v-model="publicToken" placeholder="例: public-xyz" />
-        <button class="btn secondary" @click="goToPublic" :disabled="busy">公開トークンで移動</button>
+        <button class="btn secondary" @click="goToPublic" :disabled="busy">この投票IDで移動</button>
       </div>
-      <p class="hint">またはこのルーム内に新しい Poll を作成します。</p>
+      <p class="hint">またはこのグループで新しい投票を作成します。</p>
       <div class="row">
-        <button class="btn primary" @click="goToRoom" :disabled="busy">ルーム内で移動 / 新規作成</button>
+        <button class="btn primary" @click="goToRoom" :disabled="busy">投票を作成 / 参加する</button>
         <button class="btn secondary" @click="copyLink">リンクをコピー</button>
       </div>
     </div>

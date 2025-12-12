@@ -5,9 +5,9 @@ const router = useRouter()
 
 function goToRoom() {
   // ask for room token and public token
-  const room = window.prompt('ルームトークンを入力してください（例: room-A-123）')
+  const room = window.prompt('グループIDを入力してください（例: room-A-123）')
   if (!room) return
-  const publicToken = window.prompt('移動するPollの public_token を入力してください（例: 3f33d002b304e669）')
+  const publicToken = window.prompt('投票IDを入力してください（例: 3f33d002b304e669）')
   if (!publicToken) return
   router.push({ name: 'room-poll', params: { room_token: room, public_token: publicToken } })
 }
@@ -16,11 +16,12 @@ function goToRoom() {
 <template>
   <div>
     <nav class="navbar">
-      <router-link to="/" class="nav-btn"> Home</router-link>
+      <router-link :to="{ name: 'home' }" class="nav-btn"> ホーム</router-link>
+      <router-link :to="{ name: 'start' }" class="nav-btn"> スタート</router-link>
       <router-link :to="{ name: 'poll', params: { public_token: '3f33d002b304e669' } }" class="nav-btn"> サンプル投票</router-link>
       <router-link :to="{ name: 'results', params: { public_token: '3f33d002b304e669' } }" class="nav-btn"> サンプル結果</router-link>
-      <router-link :to="{ name: 'my-rooms' }" class="nav-btn"> 作成したルーム</router-link>
-      <button @click="goToRoom" class="nav-btn primary"> ルームに飛ぶ</button>
+      <router-link :to="{ name: 'my-rooms' }" class="nav-btn"> 作成したグループ</router-link>
+      <button @click="goToRoom" class="nav-btn primary"> グループに参加</button>
     </nav>
 
     <main class="main">
@@ -28,7 +29,7 @@ function goToRoom() {
     </main>
 
     <footer class="footer">
-      mill-vue — 公開リンク + cookie 方式の投票デモ
+      Airscene — 公開リンク + cookie 方式の投票デモ
     </footer>
   </div>
 </template>

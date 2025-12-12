@@ -3,7 +3,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-  { path: '/', name: 'home', component: () => import('../views/Home.vue') },
+  // 初期表示はスタートページに変更
+  { path: '/', redirect: '/start' },
+  { path: '/start', name: 'start', component: () => import('../views/Start.vue') },
+  // 既存のホームはそのまま利用可能
+  { path: '/home', name: 'home', component: () => import('../views/Home.vue') },
+  // Airscene専用投票作成ページ
+  { path: '/airscene', name: 'airscene', component: () => import('../views/AirsceneVote.vue') },
     {
       path: '/p/:public_token',
       name: 'poll',
