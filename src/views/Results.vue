@@ -34,18 +34,48 @@ const total = computed(() => Object.values(counts.value).reduce((a, b) => a + b,
 </script>
 
 <template>
-  <div style="padding:16px">
+  <!-- 横幅制限 + 中央寄せ -->
+  <div style="padding:20px; max-width:750px; margin:0 auto">
     <div v-if="loading">Loading...</div>
     <div v-else-if="store.poll">
       <h2>Results for: {{ store.poll.title }}</h2>
-      <ul>
-        <li v-for="(count, choice) in counts" :key="choice">
-          {{ choice }}: {{ count }} ({{ total ? Math.round((count/total)*100) : 0 }}%)
-        </li>
-      </ul>
-      <p>Total votes: {{ total }}</p>
+
+      <div style="display:grid; gap:16px">
+        <div
+          v-for="(count, choice) in counts"
+          :key="choice"
+          style="border:1px solid #ddd; border-radius:8px; padding:12px; background:#fafafa"
+        >
+          <h3 style="margin:0 0 8px">{{ choice }}</h3>
+
+          <!-- バー表示 -->
+          <div style="background:#eee; border-radius:4px; overflow:hidden; height:20px">
+            <div
+              :style="{
+                width: total ? Math.round((count/total)*100) + '%' : '0%',
+                background: '#42b983',
+                height: '100%',
+                transition: 'width 0.3s ease'
+              }"
+            ></div>
+          </div>
+
+          <p style="margin:6px 0 0; font-size:14px; color:#555">
+            {{ count }}票 ({{ total ? Math.round((count/total)*100) : 0 }}%)
+          </p>
+        </div>
+      </div>
+
+      <p style="margin-top:16px; font-weight:bold">Total votes: {{ total }}</p>
+
       <div style="margin-top:12px">
-        <router-link :to="roomToken ? { name: 'room-poll', params: { room_token: roomToken, public_token: publicToken } } : { name: 'poll', params: { public_token: publicToken } }">投票に戻る</router-link>
+        <router-link
+          :to="roomToken
+            ? { name: 'room-poll', params: { room_token: roomToken, public_token: publicToken } }
+            : { name: 'poll', params: { public_token: publicToken } }"
+        >
+          投票に戻る
+        </router-link>
       </div>
     </div>
     <div v-else>Poll not found</div>
