@@ -10,8 +10,8 @@ const creatorToken = ref('')
 const copyMessage = ref('')
 const showMessage = ref(false)
 
-function copyLink(roomToken) {
-  const link = location.origin + '/r/' + roomToken + '/p/'
+function copyLink(roomToken, publicToken) {
+  const link = location.origin + '/r/' + roomToken + '/p/' + publicToken
   navigator.clipboard?.writeText(link).then(() => {
     copyMessage.value = 'リンクをコピーしました！'
     showMessage.value = true
@@ -89,10 +89,10 @@ function formatDate(dateStr) {
 
 <template>
   <div class="container">
-    <h2>作成したルーム一覧（このブラウザのみ表示）</h2>
+    <h2>作成したグループ一覧（このブラウザのみ表示）</h2>
     <div v-if="loading">読み込み中...</div>
     <div v-else>
-      <div v-if="rooms.length === 0">作成したルームが見つかりません。</div>
+      <div v-if="rooms.length === 0">作成したグループが見つかりません。</div>
       <div v-for="r in rooms" :key="r.room_token" class="room-card">
         <!-- Pollタイトルをカードの見出しに -->
         <div class="room-header" v-if="r.polls && r.polls.length">
@@ -105,14 +105,14 @@ function formatDate(dateStr) {
         <!-- 区切り線 -->
         <hr class="divider" />
 
-        <!-- ルーム番号は補助情報 -->
+        <!-- グループIDは補助情報 -->
         <div class="room-meta">
-          <span class="room-token">ルーム番号: {{ r.room_token }}</span>
+          <span class="room-token">グループID: {{ r.room_token }}</span>
         </div>
 
         <!-- リンクコピー -->
         <div class="room-actions">
-          <button @click="copyLink(r.room_token)">リンクをコピー</button>
+          <button @click="copyLink(r.room_token, r.polls[0]?.public_token)">リンクをコピー</button>
         </div>
 
         <!-- その他のPoll一覧（2件目以降） -->
