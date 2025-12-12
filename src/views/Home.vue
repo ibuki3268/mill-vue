@@ -22,12 +22,8 @@ function genHex(bytes = 8) {
 }
 
 async function createRandomRoom() {
+  // ランダム生成時は DB に保存しない
   roomToken.value = 'room-' + genHex(4)
-  try {
-    await ensureRoomRecord(roomToken.value)
-  } catch (e) {
-    // ignore
-  }
 }
 
 function getOrCreateCreatorToken() {
