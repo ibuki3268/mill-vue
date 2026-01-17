@@ -1,0 +1,31 @@
+# CodeRabbit Configuration
+language: ja
+early_access: false
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!build/**"
+    - "!*.lock"
+    - "!package-lock.json"
+    - "!yarn.lock"
+  path_instructions:
+    - path: "src/**/*.vue"
+      instructions: "Vue 3 Composition APIのベストプラクティスに従ってレビューしてください。"
+    - path: "src/**/*.js"
+      instructions: "ES6+の構文を使用し、コードの可読性とパフォーマンスに注目してください。"
+    - path: "src/router/**"
+      instructions: "ルーティング設定の妥当性とセキュリティを確認してください。"
+    - path: "src/stores/**"
+      instructions: "Pinia storeの状態管理パターンをチェックしてください。"
+chat:
+  auto_reply: true
