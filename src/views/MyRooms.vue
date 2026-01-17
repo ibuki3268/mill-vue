@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import QRCode from 'qrcode'
 
 const router = useRouter()
 const rooms = ref([])
@@ -9,6 +10,9 @@ const loading = ref(true)
 const creatorToken = ref('')
 const copyMessage = ref('')
 const showMessage = ref(false)
+const showQRModal = ref(false)
+const currentQRDataURL = ref('')
+const currentQRTitle = ref('')
 
 function copyLink(roomToken, publicToken) {
   const link = location.origin + '/r/' + roomToken + '/p/' + publicToken
@@ -19,6 +23,31 @@ function copyLink(roomToken, publicToken) {
       showMessage.value = false
     }, 2000) // 2秒後に消える
   })
+}
+
+async function showQR(roomToken, publicToken, title) {
+  try {
+    const link = location.origin + '/r/' + roomToken + '/p/' + publicToken
+    const dataURL = await QRCode.toDataURL(link, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    })
+    currentQRDataURL.value = dataURL
+    currentQRTitle.value = title
+    showQRModal.value = true
+  } catch (e) {
+    console.error('QR生成エラー', e)
+  }
+}
+
+function closeQRModal() {
+  showQRModal.value = false
+  currentQRDataURL.value = ''
+  currentQRTitle.value = ''
 }
 
 function genHex(bytes = 8) {
@@ -113,6 +142,7 @@ function formatDate(dateStr) {
         <!-- リンクコピー -->
         <div class="room-actions">
           <button @click="copyLink(r.room_token, r.polls[0]?.public_token)">リンクをコピー</button>
+          <button @click="showQR(r.room_token, r.polls[0]?.public_token, r.polls[0]?.title)" class="qr-btn">QRコード表示</button>
         </div>
 
         <!-- その他のPoll一覧（2件目以降） -->
@@ -123,8 +153,19 @@ function formatDate(dateStr) {
             </a>
             <span class="poll-badge">{{ p.public_token }}</span>
             <span class="poll-date">{{ formatDate(p.created_at) }}</span>
+            <button @click="showQR(r.room_token, p.public_token, p.title)" class="mini-qr-btn">QR</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- QRコードモーダル -->
+    <div v-if="showQRModal" class="modal-overlay" @click="closeQRModal">
+      <div class="modal-content" @click.stop>
+        <h3>{{ currentQRTitle }}</h3>
+        <img :src="currentQRDataURL" alt="QRコード" class="qr-image" />
+        <p class="qr-instruction">このQRコードを読み取って投票ページへアクセスできます</p>
+        <button @click="closeQRModal" class="close-btn">閉じる</button>
       </div>
     </div>
 
@@ -204,6 +245,14 @@ function formatDate(dateStr) {
   background: #059669;
 }
 
+.qr-btn {
+  background: #3b82f6 !important;
+  margin-left: 8px;
+}
+.qr-btn:hover {
+  background: #2563eb !important;
+}
+
 .poll-list {
   margin-top: 12px;
 }
@@ -231,6 +280,73 @@ function formatDate(dateStr) {
 .poll-date {
   font-size: 11px;
   color: #666;
+}
+
+.mini-qr-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.mini-qr-btn:hover {
+  background: #2563eb;
+}
+
+/* QRモーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modal-content h3 {
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 18px;
+}
+.qr-image {
+  width: 300px;
+  height: 300px;
+  margin: 0 auto;
+  display: block;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+}
+.qr-instruction {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #666;
+}
+.close-btn {
+  margin-top: 20px;
+  padding: 10px 24px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.close-btn:hover {
+  background: #2563eb;
 }
 
 .toast {
