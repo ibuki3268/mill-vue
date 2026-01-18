@@ -37,7 +37,8 @@ function goToRoom() {
 <style scoped>
 .navbar {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 12px;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
@@ -49,6 +50,10 @@ function goToRoom() {
   color: #374151;
   text-decoration: none;
   transition: background 0.2s, transform 0.2s;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
 }
 .nav-btn:hover {
   background: #e5e7eb;
@@ -61,6 +66,19 @@ function goToRoom() {
 .nav-btn.primary:hover {
   background: #2563eb;
 }
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+  .navbar {
+    gap: 6px;
+    padding: 8px;
+  }
+  .nav-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
 .footer {
   padding: 12px;
   border-top: 1px solid #eee;
@@ -68,7 +86,6 @@ function goToRoom() {
   color: #666;
   text-align: center;
 }
-
 
 /* ★ 追加: 現在開いているページのリンクを色付きにする */
 .router-link-exact-active {
